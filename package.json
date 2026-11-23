@@ -1,0 +1,15 @@
+{
+  "name": "@local/hub-brain",
+  "version": "1.0.0",
+  "description": "中枢大脑：DSH 知识元 / 技能 / 角色三合一插件",
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "files": ["index.js", "client.js", "host", "cordis.patch.yml", "README.md"],
+  "exports": { ".": "./index.js", "./client": "./client.js" },
+  "engines": { "node": "^22.19.0 || >=24.0.0", "dsh": ">=0.2.2-rc.1 <0.3.0" },
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": { "platform": "web", "immediately": true, "inject": [] }
+  }
+}

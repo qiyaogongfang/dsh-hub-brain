@@ -1,0 +1,4 @@
+# 中枢大脑：知识元 / 技能 / 角色
+- insert:
+    - id: hub-brain
+      name: '@local/hub-brain'
