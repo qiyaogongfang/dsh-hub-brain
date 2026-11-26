@@ -488,6 +488,7 @@ export function apply(ctx) {
               return sendJson(res, 200, { ok: true, data: next })
             }
             if (action === 'status') return sendJson(res, 200, { ok: true, data: state || { id: '', mode: '' } })
+            if (action === 'context') return sendJson(res, 200, { ok: true, data: { text: roleContextText(current() || {}) } })
             throw new Error(`未知 action：${action}`)
           } catch (error) {
             sendJson(res, 400, { ok: false, error: error.message })
@@ -496,6 +497,40 @@ export function apply(ctx) {
       }),
     )
   }
+  function readText(file, limit) {
+    try {
+      const text = readFileSync(file, 'utf8')
+      return limit ? text.slice(0, limit) : text
+    } catch {
+      return ''
+    }
+  }
+
+  /** 把所选角色的 CORE、能力层、技能说明与知识元标题拼成一段可注入的上下文。 */
+  function roleContextText(state) {
+    const parts = []
+    const roleId = (state.roles && state.roles[0]) || state.id
+    if (roleId) {
+      const dir = path.join(ROLES, roleId)
+      const core = readText(path.join(dir, 'core.md'), 3200)
+      const prompt = readText(path.join(dir, 'prompt.md'), 900)
+      if (core) parts.push(`角色 CORE（节选，必须遵守其中的身份、工作协议、输出协议与硬性纪律）：\n${core}`)
+      if (prompt) parts.push(`角色能力层（节选）：\n${prompt}`)
+    }
+    if ((state.skills || []).length) {
+      const lines = state.skills.slice(0, 8).map((name) => {
+        const md = readText(path.join(ROOT, 'skills', name, 'SKILL.md'), 600)
+        const desc = (md.match(/description:\s*(.+)/) || [])[1] || ''
+        return `- ${name}：${desc}`.trim()
+      })
+      parts.push(`本次选定技能（执行前先用 skill_load 读正文，按技能说明做）：\n${lines.join('\n')}`)
+    }
+    if ((state.atoms || []).length) {
+      parts.push(`本次选定知识元（需要正文时用 ke_get 取）：${state.atoms.join('、')}`)
+    }
+    return parts.join('\n\n')
+  }
+
   const systemPrompt = ctx.get?.('systemPrompt')
   if (systemPrompt) {
     ctx.effect(() =>
@@ -504,18 +539,21 @@ export function apply(ctx) {
         order: 44,
         text: () => {
           const state = current()
+          const context = roleContextText(state || {})
           if (!state?.id) {
             const bits = []
             if ((state?.skills || []).length) bits.push(`技能 ${state.skills.join('、')}`)
             if ((state?.atoms || []).length) bits.push(`知识元 ${state.atoms.join('、')}`)
-            return bits.length
+            const head = bits.length
               ? `本次对话使用默认身份（未选角色），已选 ${bits.join('；')}，优先使用它们。`
               : '本次对话使用默认身份（未选角色）。用户可在输入框左侧切换角色、技能与知识元。'
+            return context ? `${head}\n\n${context}` : head
           }
           const picked = (state.skills || []).length ? `本次选定技能：${state.skills.join('、')}。` : ''
           const atoms = (state.atoms || []).length ? `本次选定知识元：${state.atoms.join('、')}。` : ''
           const roles = (state.roles || (state.id ? [state.id] : [])).join('、')
-          return `本次选择角色：${roles}（${state.mode}）。${picked}${atoms}先遵守所选角色 CORE 的红线与输出协议；技能与知识按角色掌握的范围使用，越界先说明理由。用户在对话里说「学习」「记住这些」时，直接对该角色调用 role_learn 把材料写成知识元；说「进化」「升级角色」时调用 role_evolve 更新 prompt 与技能白名单，CORE 不动，不用再问。`
+          const head = `本次选择角色：${roles}（${state.mode}）。${picked}${atoms}严格按下面注入的 CORE 身份、输出协议与硬性纪律工作；技能与知识按角色掌握的范围使用，越界先说明理由。用户在对话里说「学习」「记住这些」时，直接对该角色调用 role_learn 把材料写成知识元；说「进化」「升级角色」时调用 role_evolve 更新 prompt 与技能白名单，CORE 不动，不用再问。`
+          return context ? `${head}\n\n${context}` : head
         },
       }),
     )

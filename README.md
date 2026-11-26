@@ -68,9 +68,15 @@
 2. 在 DSH 插件管理器里安装该 tgz；
 3. 刷新页面，侧栏出现「中枢大脑」。
 
-### 方式 B：GitHub Packages（npm）
+### 方式 B：公共 npm
 
-包名 `@qiyaogongfang/dsh-hub-brain`，注册表 `https://npm.pkg.github.com`。
+```bash
+npm install @qiyaogongfang/dsh-hub-brain
+```
+
+包地址：https://www.npmjs.com/package/@qiyaogongfang/dsh-hub-brain
+
+### 方式 C：GitHub Packages（npm，需 GitHub token）
 
 ```bash
 npm config set @qiyaogongfang:registry https://npm.pkg.github.com
@@ -78,7 +84,7 @@ npm config set //npm.pkg.github.com/:_authToken <你的_GITHUB_TOKEN>
 npm install @qiyaogongfang/dsh-hub-brain
 ```
 
-### 方式 C：本地打包
+### 方式 D：本地打包
 
 ```bash
 git clone https://github.com/qiyaogongfang/dsh-hub-brain.git
@@ -214,6 +220,7 @@ A：不会。插件只读写本地目录，没有外发请求。
 
 | 版本 | 日期 | 说明 |
 |---|---|---|
+| 1.1.0 | 2026-11-26 | 选中角色后把 CORE、能力层、技能说明与知识元标题注入系统提示，角色真正生效；修后台任务串会话；发布公共 npm |
 | 1.0.0 | 2026-11-23 | 首个版本：知识元、技能、角色三模块，对话内选择与学习/进化 |
 
 ## 11. License

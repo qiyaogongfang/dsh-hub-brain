@@ -1,6 +1,6 @@
 {
   "name": "@local/hub-brain",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "中枢大脑：DSH 知识元 / 技能 / 角色三合一插件",
   "type": "module",
   "main": "index.js",
